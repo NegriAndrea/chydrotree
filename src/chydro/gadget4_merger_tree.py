@@ -310,9 +310,13 @@ def get_main_prog(snapNr, SubhaloNr, targetSnapNr, tree, verb=0, get_full=True,
     # a large positive integer number, to avoid an infinite loop below
     Nlarge = 100_000
 
-    # using int() ensures we have an arrya of only one element
-    ind = int(np.flatnonzero(
+    ind = (np.flatnonzero(
             (tree['SnapNum'] == snapNr) & (tree['SubhaloNr'] == SubhaloNr)))
+
+    if ind.size == 1:
+        ind = int(ind[0])
+    else:
+        raise ValueError
 
     if get_full:
         outSubhaloNr = []
@@ -1015,8 +1019,13 @@ class forest:
         Nlarge = 100_000
 
         # using int() ensures we have an array of only one element
-        ind = int(np.flatnonzero(
+        ind = (np.flatnonzero(
                 (tree['SnapNum'] == snapNr) & (tree['SubhaloNr'] == SubhaloNr)))
+
+        if ind.size == 1:
+            ind = int(ind[0])
+        else:
+            raise ValueError
 
         outSubhaloNr = []
         outSnapNr = []
@@ -1171,8 +1180,12 @@ class forest:
         Nlarge = 100_000
 
         # using int() ensures we have an array of only one element
-        ind = int(np.flatnonzero(
-                (tree['SnapNum'] == snapNr) & (tree['SubhaloNr'] == SubhaloNr)))
+        ind = np.flatnonzero(
+                (tree['SnapNum'] == snapNr) & (tree['SubhaloNr'] == SubhaloNr))
+        if ind.size == 1:
+            ind = int(ind[0])
+        else:
+            raise ValueError
 
         outSubhaloNr = []
         outSnapNr = []
@@ -1310,10 +1323,14 @@ class forest:
         tree = slice_tree(self.tree, sl)
 
         # identify the position of the subhalo in the tree
-        # using int() ensures we have an array of only one element
-        ind = int(np.flatnonzero(
+        ind = np.flatnonzero(
                 (tree['SnapNum'] == SnapN) &
-                (tree['SubhaloNr'] == SubhaloNr)))
+                (tree['SubhaloNr'] == SubhaloNr))
+
+        if ind.size == 1:
+            ind = int(ind[0])
+        else:
+            raise ValueError
 
         progs_list = forest._get_progs_worker(ind, tree)
 
