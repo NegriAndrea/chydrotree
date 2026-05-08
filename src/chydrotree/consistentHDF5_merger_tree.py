@@ -444,7 +444,8 @@ def get_main_prog_full(finalSnapN, SubhaloNr, targetSnapNr, path, allMainP =
     return mainProg
 
 class forestCT:
-    def __init__(self, fname, newFields=['SFR', 'Pos']):
+    def __init__(self, fname, newFields=['SFR', 'Pos'], readEntireForest =
+                 True):
         """
         Read the gadget merger tree for a galaxy and return its main progenitor
         a certain snapshot.
@@ -456,6 +457,7 @@ class forestCT:
         """
         self._formatFields = [ 'M200c', 'Mass', 'MassGas', 'MassDM',
                               'MassStars', 'SFR', 'z']
+        self.readEntireForest = readEntireForest
 
         self.treeFilename = PurePath(fname)
         self.mypath = self.treeFilename.parent
@@ -467,38 +469,33 @@ class forestCT:
 
         self.tt = read_treeTable(self.treeFilename, self.Nfiles)
 
-        # read the full merger tree and store it
-        self.tree = read_tree(self.treeFilename, self.Nfiles,
-                              newFields = self.newFields)
+        if self.readEntireForest:
+            # read the full merger tree and store it
+            self.tree = read_tree(self.treeFilename, self.Nfiles,
+                                  newFields = self.newFields)
 
-        self._convert_units()
+            self._convert_units(self.tree, self.units)
 
-        S = np.unique(self.tree['SnapNum'])
-        self.Nsnaps = S.size
-        np.testing.assert_equal(S, np.arange(S.size, dtype=S.dtype))
-        del S
+            S = np.unique(self.tree['SnapNum'])
+            self.Nsnaps = S.size
+            np.testing.assert_equal(S, np.arange(S.size, dtype=S.dtype))
+            del S
+        #else:
+        #    with h5py.File(self.treeFilename, 'r') as ff:
+        #        S = np.unique(ff['/Forests/Snap_idx'][()])
 
-        # self.TreeID = []
-        # for i in range(self.Nsnaps):
-            # try:
-                # if self.Nfiles > 1 or force_multiple:
-                    # path = self.mypath/f'groups_{i:03}'
-                # else:
-                    # path = self.mypath
-                # self.TreeID.append(read_treelink(path, i))
-            # except KeyError:
-                # self.TreeID.append(np.zeros(0, dtype=np.int64))
 
-    def _convert_units(self):
+    @staticmethod
+    def _convert_units(tree, units):
 
         dset_names = ['SubhaloMass', 'Group_M_Crit200', 'SubhaloMassType']
 
         # convert in solar masses
         for dset in dset_names:
-            if dset in self.tree:
-                self.tree[dset] *= (self.units['unitMass']
-                                     /self.units['SOLAR_MASS']
-                                     /self.units['HubbleParam'])
+            if dset in tree:
+                tree[dset] *= (units['unitMass']
+                                     /units['SOLAR_MASS']
+                                     /units['HubbleParam'])
 
 
     def _convertToTable(self, dictIn, logMass=True):
@@ -615,7 +612,15 @@ class forestCT:
         sl = slice(self.tt['StartOffset'][indtree],
                    self.tt['Length'][indtree]+
                    self.tt['StartOffset'][indtree])
-        tree = slice_tree(self.tree, sl)
+
+        if self.readEntireForest:
+            tree = slice_tree(self.tree, sl)
+        else:
+            tree = read_tree(self.treeFilename, self.Nfiles,
+                             newFields = self.newFields,
+                             sl = sl)
+
+            self._convert_units(tree, self.units)
 
 
         ind = indForest - self.tt['StartOffset'][indtree]
@@ -1197,7 +1202,14 @@ class forestCT:
         sl = slice(self.tt['StartOffset'][indtree],
                    self.tt['Length'][indtree]+
                    self.tt['StartOffset'][indtree])
-        tree = slice_tree(self.tree, sl)
+        if self.readEntireForest:
+            tree = slice_tree(self.tree, sl)
+        else:
+            tree = read_tree(self.treeFilename, self.Nfiles,
+                             newFields = self.newFields,
+                             sl = sl)
+
+            self._convert_units(tree, self.units)
 
         # identify the position of the subhalo in the tree
         # using int() ensures we have an array of only one element
