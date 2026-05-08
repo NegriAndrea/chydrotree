@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chydrotree"
 description = "Read and process the Gadget4 and the HDF5 consistent tree merger trees"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
     { name = "Andrea Negri", email = "anegri@us.es" }
 ]
